@@ -23,10 +23,19 @@ Your 500-line system prompt? One click → Interactive diagram.
 
 <br />
 
-<!-- 
-🎬 Add your demo GIF here!
-![PromptViz Demo](docs/demo.gif)
--->
+</div>
+
+<br />
+
+## 📸 Screenshots
+
+<div align="center">
+
+<img src="docs/images/dashboard.png" alt="PromptViz - Main Interface" width="80%" />
+
+<br /><br />
+
+<img src="docs/images/interactive.png" alt="PromptViz - Diagram View" width="80%" />
 
 </div>
 

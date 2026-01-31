@@ -64,10 +64,12 @@ own set of rules, but there are also these global constraints that..."
 Paste your prompt. Pick your AI model. Click generate.
 
 ```
-System Prompt → AI Analysis → Interactive Diagram
+System Prompt → AI Analysis → Interactive Diagram → Edit → Generate New Prompt
 ```
 
 That's it. No parsing rules to configure. No manual diagramming. The AI reads your prompt like a human would—and draws what it sees.
+
+**But wait, there's more.** Edit the diagram visually, then generate an updated prompt in **Markdown** or **XML** format. It's a two-way street.
 
 <br />
 
@@ -78,6 +80,7 @@ That's it. No parsing rules to configure. No manual diagramming. The AI reads yo
 | 📝 Your complex prompt | 🎨 Beautiful Mermaid diagram |
 | 🤖 GPT-4, Claude, Gemini | 🔄 Flowcharts, Sequences, States |
 | 📁 .txt or .md files | ✏️ Editable, zoomable, exportable |
+| ✏️ Edited diagram | 📄 New prompt (MD / XML) |
 
 </div>
 
@@ -118,6 +121,14 @@ Not just static images. Get interactive React Flow diagrams you can pan, zoom, e
 
 </td>
 </tr>
+<tr>
+<td width="50%" colspan="2">
+
+### ✏️ Two-Way Editing — The Game Changer
+Edit nodes directly in the visual diagram, rearrange the flow, then **generate a brand new prompt** from your changes. Export as **Markdown** or **XML** format. Perfect for iterating on complex system prompts without touching raw text.
+
+</td>
+</tr>
 </table>
 
 <br />
@@ -144,6 +155,18 @@ Not just static images. Get interactive React Flow diagrams you can pan, zoom, e
 - Drag & drop file upload (`.txt`, `.md`)
 - Interactive canvas: pan, zoom, edit nodes
 - Works beautifully on desktop, tablet, and mobile
+
+</details>
+
+<details>
+<summary><b>✏️ Visual Editing + Prompt Generation</b></summary>
+<br />
+
+- Edit diagram nodes directly in visualization mode
+- Rearrange, rename, and restructure your prompt flow visually
+- Generate updated prompts from your edited diagram
+- Export in **Markdown** or **XML** format
+- Two-way workflow: Prompt → Diagram → Edit → New Prompt
 
 </details>
 
@@ -231,7 +254,7 @@ Not just static images. Get interactive React Flow diagrams you can pan, zoom, e
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/PromptViz.git
+git clone https://github.com/tiwari85aman/PromptViz.git
 cd PromptViz
 ```
 
@@ -444,7 +467,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for better prompt visualization**
 
-[Report Bug](https://github.com/yourusername/PromptViz/issues) · [Request Feature](https://github.com/yourusername/PromptViz/issues)
+[Report Bug](https://github.com/tiwari85aman/PromptViz/issues) · [Request Feature](https://github.com/tiwari85aman/PromptViz/issues)
 
 <br />
 

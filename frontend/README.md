@@ -9,7 +9,7 @@ A modern, responsive React frontend for PromptViz - an AI-powered system prompt 
 - **Multiple Input Methods**: Text input or file upload (.txt, .md)
 - **Real-time Preview**: Toggle between diagram view and code view
 - **Multiple AI Models**: Support for GPT-4, GPT-3.5, Claude, and more
-- **Diagram Types**: Flowcharts, sequence diagrams, state diagrams, class diagrams
+- **Flowchart Diagrams**: Generate clear, interactive flowchart visualizations
 
 ### User Experience
 - **Modern UI/UX**: Clean, professional design following the detailed UX specifications
@@ -168,14 +168,13 @@ The application includes comprehensive error handling:
 
 ### Basic Text Input
 1. Select an AI model (GPT-4 recommended)
-2. Choose diagram type (Flowchart for general prompts)
-3. Enter your system prompt in the text area
-4. Click "Generate Diagram" or press Cmd+Enter
+2. Enter your system prompt in the text area
+3. Click "Generate Diagram" or press Cmd+Enter
 
 ### File Upload
 1. Switch to "Upload" input method
 2. Drag and drop a .txt or .md file
-3. Configure model and diagram type
+3. Configure AI model
 4. Generate the diagram
 
 ### Viewing Results

@@ -4,6 +4,8 @@ import Sidebar from './components/Sidebar';
 import MobileSidebar from './components/MobileSidebar';
 import DiagramCanvas from './components/DiagramCanvas';
 import DiagramHistory from './components/DiagramHistory';
+import SettingsModal from './components/SettingsModal';
+import { SettingsProvider } from './contexts/SettingsContext';
 import apiService from './services/api';
 import type { GenerateDiagramResponse, Diagram } from './types/api';
 
@@ -27,6 +29,7 @@ function App() {
     diagramId: undefined,
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Check API health on mount
   useEffect(() => {
@@ -121,13 +124,19 @@ function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      <Header 
-        onMenuClick={() => setIsMobileSidebarOpen(true)}
-        onHistoryClick={handleShowHistory}
-        showBackButton={viewMode === 'history'}
-        onBackClick={handleCloseHistory}
-      />
+    <SettingsProvider>
+      <div className="h-screen flex flex-col bg-gray-50">
+        <Header 
+          onMenuClick={() => setIsMobileSidebarOpen(true)}
+          onHistoryClick={handleShowHistory}
+          onSettingsClick={() => setIsSettingsOpen(true)}
+          showBackButton={viewMode === 'history'}
+          onBackClick={handleCloseHistory}
+        />
+        <SettingsModal 
+          isOpen={isSettingsOpen} 
+          onClose={() => setIsSettingsOpen(false)} 
+        />
       <div className="flex-1 flex overflow-hidden">
         {viewMode === 'history' ? (
           <DiagramHistory
@@ -165,6 +174,7 @@ function App() {
         )}
       </div>
     </div>
+    </SettingsProvider>
   );
 }
 

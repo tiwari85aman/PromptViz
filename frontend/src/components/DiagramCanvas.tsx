@@ -85,27 +85,78 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     setCurrentDiagramState(null);
   }, [mermaidCode]);
 
-  // Sanitize Mermaid code to remove invalid characters
+  // Sanitize Mermaid code to remove invalid characters and fix common LLM mistakes
   const sanitizeMermaidCode = (code: string): string => {
     if (!code) return code;
     
     let sanitized = code;
     
+    // Process each line to fix node labels
+    sanitized = sanitized.split('\n').map(line => {
+      // Skip non-node lines (comments, flowchart declaration, etc.)
+      if (!line.includes('[') || line.trim().startsWith('%%') || 
+          line.trim().startsWith('flowchart') || line.trim().startsWith('graph')) {
+        return line;
+      }
+      
+      // Fix nested square brackets inside node labels: A[Text [nested] more] -> A[Text nested more]
+      // Apply multiple times for deeply nested brackets
+      let prevLine = '';
+      while (prevLine !== line) {
+        prevLine = line;
+        line = line.replace(/\[([^\[\]]*)\[([^\[\]]*)\]([^\[\]]*)\]/g, '[$1$2$3]');
+      }
+      
+      // Fix colon followed by square bracket: A[Text: [value]] -> A[Text: value]
+      line = line.replace(/:\s*\[([^\]]*)\]/g, ': $1');
+      
+      return line;
+    }).join('\n');
+    
     // Remove parentheses from node labels - replace with dashes
-    while (/\[([^\]]*)\(([^)]*)\)([^\]]*)\]/.test(sanitized)) {
-      sanitized = sanitized.replace(/\[([^\]]*)\(([^)]*)\)([^\]]*)\]/g, (match, before, parenContent, after) => {
-        return `[${before}${after ? after.trim() : ''} - ${parenContent}]`;
+    // Apply multiple times for nested parentheses
+    let prevSanitized = '';
+    while (prevSanitized !== sanitized) {
+      prevSanitized = sanitized;
+      sanitized = sanitized.replace(/\[([^\[\]]*)\(([^()]*)\)([^\[\]]*)\]/g, (match, before, parenContent, after) => {
+        return `[${before.trim()}${parenContent ? ' - ' + parenContent.trim() : ''}${after ? ' ' + after.trim() : ''}]`.replace(/\s+/g, ' ');
       });
     }
     
     // Remove triple backticks that might be in labels
     sanitized = sanitized.replace(/```/g, '');
     
-    // Fix common syntax issues
+    // Remove single backticks from inside node labels
+    sanitized = sanitized.replace(/\[([^\]]*)`([^`]*)`([^\]]*)\]/g, '[$1$2$3]');
+    
+    // Replace special characters that break Mermaid parsing inside labels
+    // Handle quotes inside labels
+    sanitized = sanitized.replace(/\[([^\]]*)"([^"]*)"([^\]]*)\]/g, '[$1\'$2\'$3]');
+    
+    // Remove angle brackets from labels (< and >)
+    sanitized = sanitized.replace(/\[([^\]]*)<([^>]*)>([^\]]*)\]/g, '[$1$2$3]');
+    
+    // Fix labels with unmatched or problematic characters
+    sanitized = sanitized.replace(/\[([^\]]*)\{([^\}]*)\}([^\]]*)\]/g, '[$1$2$3]');
+    
+    // Clean up multiple spaces and normalize whitespace in labels
+    sanitized = sanitized.replace(/\[\s+/g, '[');
+    sanitized = sanitized.replace(/\s+\]/g, ']');
+    sanitized = sanitized.replace(/\[([^\]]+)\]/g, (match, content) => {
+      return '[' + content.replace(/\s+/g, ' ').trim() + ']';
+    });
+    
+    // Fix common syntax issues - text appearing after node definitions
     sanitized = sanitized.replace(/]\s+([A-Z]{2,})\s*(\n|$)/g, ']$2');
     sanitized = sanitized.replace(/\]\s*([A-Z]{2,})\s*$/gm, ']');
     sanitized = sanitized.replace(/(-->[^\[\n]*\[[^\]]+\])\s+([A-Z]{2,})\s*(\n|$)/g, '$1$3');
+    
+    // Normalize multiple spaces throughout
     sanitized = sanitized.replace(/[ \t]{2,}/g, ' ');
+    
+    // Fix edge labels with problematic characters
+    sanitized = sanitized.replace(/\|([^|]*)\[([^\]]*)\]([^|]*)\|/g, '|$1$2$3|');
+    sanitized = sanitized.replace(/\|([^|]*)\(([^)]*)\)([^|]*)\|/g, '|$1$2$3|');
     
     return sanitized.trim();
   };

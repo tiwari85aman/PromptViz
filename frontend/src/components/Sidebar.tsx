@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Cpu, Settings, Rocket } from 'lucide-react';
-import apiService from '../services/api';
-import type { ModelInfo } from '../types/api';
+import React, { useState } from 'react';
+import { Upload, FileText, Cpu, Rocket, ChevronDown } from 'lucide-react';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface SidebarProps {
   onGenerate: (data: {
@@ -14,40 +13,16 @@ interface SidebarProps {
   isGenerating: boolean;
 }
 
-const DIAGRAM_TYPES = [
-  { value: 'flowchart', label: 'Flowchart', description: 'Process flows and decision trees' },
-  { value: 'sequence', label: 'Sequence Diagram', description: 'Interactions over time' },
-  { value: 'state', label: 'State Diagram', description: 'State transitions' },
-  { value: 'class', label: 'Class Diagram', description: 'Object relationships' },
-];
-
 const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
+  const { settings, availableModels } = useSettings();
   const [prompt, setPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gpt-4');
-  const [selectedDiagramType, setSelectedDiagramType] = useState('flowchart');
+  const [modelOverride, setModelOverride] = useState<string | null>(null);
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Load available models on component mount
-  useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const response = await apiService.getModels();
-        setAvailableModels(response.models);
-      } catch (error) {
-        console.error('Failed to load models:', error);
-        // Fallback to default models
-        setAvailableModels([
-          { name: 'gpt-4', provider: 'OpenAI', available: true },
-          { name: 'gpt-3.5-turbo', provider: 'OpenAI', available: true },
-          { name: 'claude-3-sonnet', provider: 'Anthropic', available: true },
-        ]);
-      }
-    };
-    loadModels();
-  }, []);
+  // Use override if set, otherwise use global default
+  const selectedModel = modelOverride ?? settings.defaultModel;
 
   const handleFileUpload = (file: File) => {
     setSelectedFile(file);
@@ -89,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
     onGenerate({
       prompt: inputMethod === 'text' ? prompt : '',
       model: selectedModel,
-      diagramType: selectedDiagramType,
+      diagramType: 'flowchart',
       inputType: inputMethod,
       file: inputMethod === 'file' ? selectedFile || undefined : undefined,
     });
@@ -102,57 +77,59 @@ const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
     return false;
   };
 
+  const selectedModelInfo = availableModels.find(m => m.name === selectedModel);
+
   return (
     <aside className="w-80 bg-white border-r border-gray-200 flex flex-col h-full lg:h-full">
       <div className="p-6 space-y-6 flex-1 overflow-y-auto">
-        {/* Model Selection */}
+        {/* Model Indicator / Selection */}
         <div className="space-y-3">
-          <label htmlFor="model-select" className="block text-sm font-semibold text-gray-900">
+          <label className="block text-sm font-semibold text-gray-900">
             <Cpu className="w-4 h-4 inline mr-2" />
             AI Model
           </label>
-          <select
-            id="model-select"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-          >
-            {availableModels.map((model) => (
-              <option 
-                key={model.name} 
-                value={model.name}
-                disabled={!model.available}
+          
+          {settings.showModelSelectorPerAction ? (
+            // Full model selector when enabled in settings
+            <div className="relative">
+              <select
+                id="model-select"
+                value={selectedModel}
+                onChange={(e) => setModelOverride(e.target.value)}
+                className="w-full appearance-none px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent bg-white"
               >
-                {model.name} ({model.provider})
-              </option>
-            ))}
-          </select>
+                {availableModels.map((model) => (
+                  <option 
+                    key={model.name} 
+                    value={model.name}
+                    disabled={!model.available}
+                  >
+                    {model.name} ({model.provider})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          ) : (
+            // Compact display when using global default
+            <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-700">
+                  {selectedModel}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500">
+                {selectedModelInfo?.provider}
+              </span>
+            </div>
+          )}
+          
           <p className="text-xs text-gray-500">
-            {availableModels.find(m => m.name === selectedModel)?.provider && 
-              `Provider: ${availableModels.find(m => m.name === selectedModel)?.provider}`
+            {settings.showModelSelectorPerAction 
+              ? 'Override the default model for this generation'
+              : 'Change default in Settings'
             }
-          </p>
-        </div>
-
-        {/* Diagram Type */}
-        <div className="space-y-3">
-          <label className="block text-sm font-semibold text-gray-900">
-            <Settings className="w-4 h-4 inline mr-2" />
-            Diagram Type
-          </label>
-          <select
-            value={selectedDiagramType}
-            onChange={(e) => setSelectedDiagramType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-          >
-            {DIAGRAM_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500">
-            {DIAGRAM_TYPES.find(t => t.value === selectedDiagramType)?.description}
           </p>
         </div>
 

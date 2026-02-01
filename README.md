@@ -78,7 +78,7 @@ That's it. No parsing rules to configure. No manual diagramming. The AI reads yo
 | Input | Output |
 |:-----:|:------:|
 | 📝 Your complex prompt | 🎨 Beautiful Mermaid diagram |
-| 🤖 GPT-4, Claude, Gemini | 🔄 Flowcharts, Sequences, States |
+| 🤖 GPT-4, Claude, Gemini | 🔄 Interactive Flowcharts |
 | 📁 .txt or .md files | ✏️ Editable, zoomable, exportable |
 | ✏️ Edited diagram | 📄 New prompt (MD / XML) |
 
@@ -142,7 +142,7 @@ Edit nodes directly in the visual diagram, rearrange the flow, then **generate a
 <br />
 
 - Intelligent AI analysis of prompt structure, decision trees, and workflows
-- 5 diagram types: Flowchart, Sequence, State, Class, Entity Relationship
+- Generates clear, well-structured flowchart diagrams
 - Auto-detects the best visualization approach for your content
 
 </details>
@@ -366,14 +366,6 @@ PromptViz/
 ```
 
 ---
-
-## 🎨 Supported Diagram Types
-
-- **Flowchart**: General process flows and decision trees
-- **Sequence Diagram**: Interaction between components/actors
-- **State Diagram**: State machines and transitions
-- **Class Diagram**: Object-oriented structures
-- **Entity Relationship**: Database schemas
 
 ---
 

@@ -10,10 +10,11 @@ import {
   AlertCircle,
   Download,
   ChevronDown,
+  Cpu,
 } from 'lucide-react';
 import { Node, Edge } from 'reactflow';
 import apiService from '../services/api';
-import type { ModelInfo } from '../types/api';
+import { useSettings } from '../contexts/SettingsContext';
 
 export type PromptFormat = 'xml' | 'markdown';
 
@@ -34,33 +35,17 @@ const PromptGeneratorModal: React.FC<PromptGeneratorModalProps> = ({
   originalPrompt,
   diagramId,
 }) => {
+  const { settings, availableModels } = useSettings();
   const [format, setFormat] = useState<PromptFormat>('xml');
-  const [selectedModel, setSelectedModel] = useState('gpt-4');
-  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [modelOverride, setModelOverride] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [processingTime, setProcessingTime] = useState<number | null>(null);
 
-  // Load available models
-  useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const response = await apiService.getModels();
-        setAvailableModels(response.models);
-      } catch (err) {
-        console.error('Failed to load models:', err);
-        setAvailableModels([
-          { name: 'gpt-4', provider: 'OpenAI', available: true },
-          { name: 'gpt-3.5-turbo', provider: 'OpenAI', available: true },
-        ]);
-      }
-    };
-    if (isOpen) {
-      loadModels();
-    }
-  }, [isOpen]);
+  // Use override if set, otherwise use global default
+  const selectedModel = modelOverride ?? settings.defaultModel;
 
   // Reset state when modal opens
   useEffect(() => {
@@ -69,8 +54,11 @@ const PromptGeneratorModal: React.FC<PromptGeneratorModalProps> = ({
       setError(null);
       setCopied(false);
       setProcessingTime(null);
+      setModelOverride(null); // Reset to use global default
     }
   }, [isOpen]);
+
+  const selectedModelInfo = availableModels.find(m => m.name === selectedModel);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -214,25 +202,40 @@ const PromptGeneratorModal: React.FC<PromptGeneratorModalProps> = ({
               </div>
             </div>
 
-            {/* Model Selection */}
+            {/* Model Selection / Indicator */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Cpu className="w-4 h-4 inline mr-1.5" />
                 AI Model
               </label>
-              <div className="relative">
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full appearance-none px-4 py-3 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white"
-                >
-                  {availableModels.map((model) => (
-                    <option key={model.name} value={model.name} disabled={!model.available}>
-                      {model.name} ({model.provider})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-              </div>
+              {settings.showModelSelectorPerAction ? (
+                <div className="relative">
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setModelOverride(e.target.value)}
+                    className="w-full appearance-none px-4 py-3 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white"
+                  >
+                    {availableModels.map((model) => (
+                      <option key={model.name} value={model.name} disabled={!model.available}>
+                        {model.name} ({model.provider})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="font-medium text-gray-700">
+                      {selectedModel}
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {selectedModelInfo?.provider}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

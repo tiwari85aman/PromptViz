@@ -13,12 +13,14 @@ interface SettingsContextValue {
   availableModels: ModelInfo[];
   isLoadingModels: boolean;
   refreshModels: () => Promise<void>;
+  apiWarning: string | null;
+  hasAvailableModels: boolean;
 }
 
 const STORAGE_KEY = 'promptviz_settings';
 
 const DEFAULT_SETTINGS: Settings = {
-  defaultModel: 'gemini-2.5-flash-lite',
+  defaultModel: 'gemini/gemini-2.0-flash',
   showModelSelectorPerAction: false,
 };
 
@@ -51,13 +53,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(true);
+  const [apiWarning, setApiWarning] = useState<string | null>(null);
 
   // Load available models on mount
   const loadModels = useCallback(async () => {
     setIsLoadingModels(true);
+    setApiWarning(null);
     try {
       const response = await apiService.getModels();
       setAvailableModels(response.models);
+      
+      // Check for warning from API (e.g., no API keys configured)
+      if (response.warning) {
+        setApiWarning(response.warning);
+      }
       
       // If the current default model isn't available, switch to the first available one
       const modelNames = response.models.filter(m => m.available).map(m => m.name);
@@ -66,17 +75,16 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       }
     } catch (error) {
       console.error('Failed to load models:', error);
-      // Fallback models
-      setAvailableModels([
-        { name: 'gemini-2.5-flash-lite', provider: 'Google', available: true },
-        { name: 'gpt-4', provider: 'OpenAI', available: true },
-        { name: 'gpt-3.5-turbo', provider: 'OpenAI', available: true },
-        { name: 'claude-3-sonnet', provider: 'Anthropic', available: true },
-      ]);
+      setApiWarning('Failed to connect to backend. Please check if the server is running.');
+      // Set empty models on error - don't show fake available models
+      setAvailableModels([]);
     } finally {
       setIsLoadingModels(false);
     }
   }, [settings.defaultModel]);
+  
+  // Compute if any models are actually available
+  const hasAvailableModels = availableModels.some(m => m.available);
 
   useEffect(() => {
     loadModels();
@@ -108,6 +116,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         availableModels,
         isLoadingModels,
         refreshModels,
+        apiWarning,
+        hasAvailableModels,
       }}
     >
       {children}

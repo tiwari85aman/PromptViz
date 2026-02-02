@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Cpu, Check, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
+import { X, Cpu, Check, RefreshCw, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
 interface SettingsModalProps {
@@ -8,7 +8,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { settings, updateSettings, availableModels, isLoadingModels, refreshModels } = useSettings();
+  const { settings, updateSettings, availableModels, isLoadingModels, refreshModels, apiWarning, hasAvailableModels } = useSettings();
 
   if (!isOpen) return null;
 
@@ -45,6 +45,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
         {/* Content */}
         <div className="p-6 space-y-6">
+          {/* Warning Banner */}
+          {(apiWarning || !hasAvailableModels) && !isLoadingModels && (
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-800">
+                  {apiWarning || 'No AI models available'}
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Configure API keys in your environment variables to enable AI features.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Default Model Selection */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">

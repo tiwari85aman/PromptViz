@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Cpu, Rocket, ChevronDown } from 'lucide-react';
+import { Upload, FileText, Cpu, Rocket, ChevronDown, AlertTriangle } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
 interface SidebarProps {
@@ -14,7 +14,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
-  const { settings, availableModels } = useSettings();
+  const { settings, availableModels, apiWarning, hasAvailableModels } = useSettings();
   const [prompt, setPrompt] = useState('');
   const [modelOverride, setModelOverride] = useState<string | null>(null);
   const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text');
@@ -72,6 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
 
   const canGenerate = () => {
     if (isGenerating) return false;
+    if (!hasAvailableModels) return false; // No API keys configured
     if (inputMethod === 'text') return prompt.trim().length >= 10;
     if (inputMethod === 'file') return selectedFile !== null;
     return false;
@@ -82,6 +83,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
   return (
     <aside className="w-80 bg-white border-r border-gray-200 flex flex-col h-full lg:h-full">
       <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+        {/* API Warning Banner */}
+        {(apiWarning || !hasAvailableModels) && (
+          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-amber-800">
+                No API keys configured
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Set API keys in environment variables to enable AI features.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Model Indicator / Selection */}
         <div className="space-y-3">
           <label className="block text-sm font-semibold text-gray-900">

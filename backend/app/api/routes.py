@@ -364,11 +364,19 @@ class Models(Resource):
     def get(self):
         """Get list of available AI models"""
         try:
-            if not llm_client:
-                return {'error': 'LLM service not available'}, 500
+            if llm_client:
+                models = llm_client.get_available_models()
+                return models, 200
             
-            models = llm_client.get_available_models()
-            return models, 200
+            # When no API keys are configured, return all models as unavailable
+            # This allows the UI to show which models exist but warn the user
+            all_models = [
+                {**model, "available": False} for model in Config.SUPPORTED_MODELS
+            ]
+            return {
+                "models": all_models,
+                "warning": "No API keys configured. Please set at least one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY"
+            }, 200
             
         except Exception as e:
             return {'error': f'Internal server error: {str(e)}'}, 500

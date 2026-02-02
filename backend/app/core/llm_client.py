@@ -12,8 +12,20 @@ litellm._turn_on_debug() # 👈 this is the 1-line change you need to make
 class LiteLLMClient:
     """Client for interacting with LiteLLM for AI-powered diagram generation"""
     
+    # Provider to API key mapping
+    PROVIDER_KEY_MAP = {
+        'openai': 'OPENAI_API_KEY',
+        'anthropic': 'ANTHROPIC_API_KEY',
+        'google': 'GEMINI_API_KEY',
+    }
+    
     def __init__(self):
-        self.api_key = Config.LITELLM_API_KEY
+        # Store API keys by provider
+        self.api_keys = {
+            'openai': Config.OPENAI_API_KEY,
+            'anthropic': Config.ANTHROPIC_API_KEY,
+            'google': Config.GEMINI_API_KEY,
+        }
         self.default_model = Config.LITELLM_MODEL
         self.timeout = Config.LITELLM_TIMEOUT
         
@@ -21,8 +33,44 @@ class LiteLLMClient:
         self.system_prompt = self._load_system_prompt('MermaidExpertSystemPrompt.md')
         self.prompt_generator_system_prompt = self._load_system_prompt('PromptGeneratorSystemPrompt.md')
         
-        if not self.api_key:
-            raise ValueError("LiteLLM API key not configured. Please set OPENAI_API_KEY environment variable.")
+        # Check if at least one API key is configured
+        if not any(self.api_keys.values()):
+            raise ValueError("No API keys configured. Please set at least one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY")
+    
+    def _get_provider_for_model(self, model: str) -> str:
+        """
+        Determine the provider based on model name
+        
+        Args:
+            model: Model name (e.g., 'gpt-4', 'claude-3-sonnet', 'gemini/gemini-2.0-flash')
+            
+        Returns:
+            Provider name: 'openai', 'anthropic', or 'google'
+        """
+        model_lower = model.lower()
+        
+        if model_lower.startswith('gpt-') or model_lower.startswith('o1'):
+            return 'openai'
+        elif model_lower.startswith('claude-'):
+            return 'anthropic'
+        elif model_lower.startswith('gemini/') or model_lower.startswith('gemini-'):
+            return 'google'
+        else:
+            # Default to openai for unknown models
+            return 'openai'
+    
+    def _get_api_key_for_model(self, model: str) -> Optional[str]:
+        """
+        Get the appropriate API key for the given model
+        
+        Args:
+            model: Model name
+            
+        Returns:
+            API key for the model's provider, or None if not configured
+        """
+        provider = self._get_provider_for_model(model)
+        return self.api_keys.get(provider)
     
     def _load_system_prompt(self, filename: str) -> str:
         """Load a system prompt from file"""
@@ -57,28 +105,24 @@ Return ONLY the Mermaid diagram code, no explanations or additional text. The di
             Dictionary containing the generated diagram and metadata
         """
         start_time = time.time()
+        model_to_use = model or self.default_model
         
         try:
-            # Combine system prompt with user prompt
-            combined_prompt = f"""
-            {self.system_prompt}
-
-            Please analyze the following prompt and generate a Mermaid diagram:
-
-            {user_prompt}
-
-            Generate a {diagram_type} diagram that visualizes this prompt's structure and components.
-            """
+            # Get the appropriate API key for this model
+            api_key = self._get_api_key_for_model(model_to_use)
+            if not api_key:
+                provider = self._get_provider_for_model(model_to_use)
+                raise ValueError(f"No API key configured for {provider}. Please set {self.PROVIDER_KEY_MAP.get(provider, 'API_KEY')} environment variable.")
             
             # Make API call to LiteLLM
             response = completion(
-                model=model or self.default_model,
+                model=model_to_use,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": f"Please analyze the following prompt and generate a Mermaid {diagram_type} diagram:\n\n{user_prompt}"},
                     {"role": "assistant", "content": f"```mermaid"}
                 ],
-                api_key=self.api_key,
+                api_key=api_key,
                 timeout=self.timeout,
                 temperature=0.1,  # Low temperature for consistent output
                 max_tokens=100000
@@ -148,50 +192,27 @@ Return ONLY the Mermaid diagram code, no explanations or additional text. The di
     
     def get_available_models(self) -> Dict[str, Any]:
         """
-        Get list of available models
+        Get list of available models, filtered by configured API keys
         
         Returns:
-            Dictionary with available models
+            Dictionary with available models (only those with configured API keys)
         """
-        # For now, return a curated list of common models
-        # In a real implementation, you might query LiteLLM for available models
-        models = [
-            {
-                "name": "gpt-4",
-                "provider": "openai",
-                "available": True
-            },
-            {
-                "name": "gpt-3.5-turbo",
-                "provider": "openai",
-                "available": True
-            },
-            {
-                "name": "claude-3-opus",
-                "provider": "anthropic",
-                "available": True
-            },
-            {
-                "name": "claude-3-sonnet",
-                "provider": "anthropic",
-                "available": True
-            },
-            {
-                "name": "gemini/gemini-2.0-flash",
-                "provider": "google",
-                "available": True
-            },
-            {
-                "name": "gemini/gemini-2.5-flash-lite",
-                "provider": "google",
-                "available": True
-            },
-            {
-                "name": "gemini/gemini-flash-latest",
-                "provider": "google",
-                "available": True
-            }
-        ]
+        # Get supported models from central config
+        all_models = Config.SUPPORTED_MODELS
+        
+        # Filter models based on configured API keys
+        models = []
+        for model in all_models:
+            provider = model["provider"]
+            has_key = bool(self.api_keys.get(provider))
+            models.append({
+                "name": model["name"],
+                "provider": provider,
+                "available": has_key
+            })
+        
+        # Sort: available models first, preserving the preferred order within each group
+        models.sort(key=lambda m: (not m["available"]))
         
         return {"models": models}
     
@@ -272,8 +293,15 @@ Return ONLY the Mermaid diagram code, no explanations or additional text. The di
             Dictionary containing the generated prompt and metadata
         """
         start_time = time.time()
+        model_to_use = model or self.default_model
         
         try:
+            # Get the appropriate API key for this model
+            api_key = self._get_api_key_for_model(model_to_use)
+            if not api_key:
+                provider = self._get_provider_for_model(model_to_use)
+                raise ValueError(f"No API key configured for {provider}. Please set {self.PROVIDER_KEY_MAP.get(provider, 'API_KEY')} environment variable.")
+            
             # Format the diagram structure for the LLM
             diagram_text = self._format_diagram_for_prompt(diagram_structure)
             
@@ -293,12 +321,12 @@ Return ONLY the Mermaid diagram code, no explanations or additional text. The di
             
             # Make API call to LiteLLM
             response = completion(
-                model=model or self.default_model,
+                model=model_to_use,
                 messages=[
                     {"role": "system", "content": self.prompt_generator_system_prompt},
                     {"role": "user", "content": user_message}
                 ],
-                api_key=self.api_key,
+                api_key=api_key,
                 timeout=self.timeout,
                 temperature=0.3,  # Slightly higher for more creative prompt generation
                 max_tokens=8000

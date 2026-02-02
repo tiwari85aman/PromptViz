@@ -21,6 +21,7 @@ export interface ModelInfo {
 
 export interface ModelsResponse {
   models: ModelInfo[];
+  warning?: string;
 }
 
 export interface SystemPromptInfo {

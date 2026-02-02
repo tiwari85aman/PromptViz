@@ -20,6 +20,7 @@ Your 500-line system prompt? One click → Interactive diagram.
 [![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-v1.0.0-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/tiwari85aman/promptviz)
 
 <br />
 
@@ -245,7 +246,75 @@ Edit nodes directly in the visual diagram, rearrange the flow, then **generate a
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🐳 Docker Deployment
+
+The easiest way to run PromptViz is with Docker.
+
+### Quick Start with Docker
+
+**Option 1: Pull from Docker Hub (fastest)**
+
+```bash
+docker run -d \
+  -p 3000:80 \
+  -p 5001:5001 \
+  -e GEMINI_API_KEY=your-gemini-api-key \
+  --name promptviz \
+  tiwari85aman/promptviz:v1.0.0
+```
+
+**With multiple API keys:**
+
+```bash
+docker run -d \
+  -p 3000:80 \
+  -p 5001:5001 \
+  -e GEMINI_API_KEY=your-gemini-api-key \
+  -e OPENAI_API_KEY=your-openai-api-key \
+  -e ANTHROPIC_API_KEY=your-anthropic-api-key \
+  --name promptviz \
+  tiwari85aman/promptviz:v1.0.0
+```
+
+**Option 2: Build from source with Docker Compose**
+
+```bash
+# Clone the repository
+git clone https://github.com/tiwari85aman/PromptViz.git
+cd PromptViz
+
+# Copy and configure environment variables
+cp docker.env.example .env
+# Edit .env with your API key(s)
+
+# Build and run with Docker Compose
+docker compose up --build
+```
+
+The app will be available at:
+- **Frontend**: http://localhost:3000
+
+### Environment Variables for Docker
+
+Create a `.env` file in the project root:
+
+```env
+# Required: Set at least one API key
+GEMINI_API_KEY=your-gemini-api-key
+OPENAI_API_KEY=your-openai-api-key
+
+# Optional configuration
+FLASK_ENV=production
+LITELLM_MODEL=gemini-2.5-flash-lite
+SECRET_KEY=change-this-in-production
+```
+
+**Mount options:**
+- `-v /path/on/host:/app/backend/data` - Bind mount to a specific host directory for database persistence
+
+---
+
+### Build Prerequisites 
 
 - **Node.js** 16+ (for frontend)
 - **Python** 3.9+ (for backend)

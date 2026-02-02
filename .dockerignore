@@ -1,0 +1,51 @@
+# Dependencies
+frontend/node_modules
+backend/venv
+backend/__pycache__
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Build artifacts
+frontend/build
+*.egg-info
+dist
+build
+
+# Environment files (pass via docker-compose)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage
+.coverage
+htmlcov
+.pytest_cache
+
+# Documentation (optional, remove if needed in container)
+docs/
+
+# Docker files (no need to copy these into the image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Local testing DB
+backend/data/

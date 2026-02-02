@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  promptviz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: promptviz
+    ports:
+      - "3000:80"      # Frontend (nginx)
+      - "5001:5001"    # Backend API (optional direct access)
+    environment:
+      # API Keys (set at least one)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      
+      # Optional configuration
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - LITELLM_MODEL=${LITELLM_MODEL:-gemini/gemini-2.0-flash}
+      - LITELLM_TIMEOUT=${LITELLM_TIMEOUT:-60}
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+    volumes:
+      # Persist SQLite database
+      - promptviz-data:/app/backend/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  promptviz-data:
+    driver: local
